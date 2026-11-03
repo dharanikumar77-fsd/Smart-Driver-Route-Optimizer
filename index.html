@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Driver Route and Rest Optimizer | DSA Dijkstra Project</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD0IgM3vAu0UeHHvSw4bjeLQqXQgpbXSy0",
+      authDomain: "driverroute-and-rest-optimizer.firebaseapp.com",
+      projectId: "driverroute-and-rest-optimizer",
+      storageBucket: "driverroute-and-rest-optimizer.firebasestorage.app",
+      messagingSenderId: "686236144697",
+      appId: "1:686236144697:web:eeb7d9259aef5d569429e8"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    window.firebaseAuth = getAuth(app);
+    window.fbCreateUser = createUserWithEmailAndPassword;
+    window.fbSignIn = signInWithEmailAndPassword;
+    window.fbSignOut = signOut;
+    window.fbAuthState = onAuthStateChanged;
+  </script>
+</head>
+
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col font-sans">
+
+  <!-- AUTHENTICATION DASHBOARD -->
+  <div id="authDashboard" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-4">
+    <div id="loginWrapper" class="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl space-y-6">
+      <div class="text-center">
+        <div
+          class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center text-2xl mx-auto mb-3 shadow-lg">
+          🧭</div>
+        <h2 class="text-2xl font-bold text-slate-900">Member Sign In</h2>
+        <p class="text-sm text-slate-500 mt-1">Smart Driver Route Optimizer</p>
+      </div>
+      <form id="loginForm" class="space-y-4">
+        <input type="email" id="loginEmail" placeholder="Email Address" required
+          class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 outline-none focus:border-blue-500">
+
+        <!-- PASSWORD INPUT WITH VIEW TOGGLE -->
+        <div class="relative">
+          <input type="password" id="loginPass" placeholder="Password" required
+            class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 pr-10 outline-none focus:border-blue-500">
+          <button type="button" onclick="togglePasswordVisibility('loginPass', this)"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 focus:outline-none text-base">👁️</button>
+        </div>
+
+        <button type="submit"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-4 py-3 transition">Sign
+          In</button>
+      </form>
+      <p class="text-center text-sm text-slate-600">New driver? <button id="showSignupBtn" type="button"
+          class="text-blue-600 font-bold hover:underline">Create an account</button></p>
+    </div>
+
+    <div id="signupWrapper" class="hidden bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl space-y-6">
+      <div class="text-center">
+        <div
+          class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-2xl mx-auto mb-3 shadow-lg">
+          🛣️</div>
+        <h2 class="text-2xl font-bold text-slate-900">Sign Up as New Member</h2>
+      </div>
+      <form id="signupForm" class="space-y-4">
+        <input type="email" id="signupEmail" placeholder="Email Address" required
+          class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 outline-none focus:border-emerald-500">
+
+        <!-- SIGNUP PASSWORD INPUT WITH VIEW TOGGLE -->
+        <div class="relative">
+          <input type="password" id="signupPass" placeholder="Create Password" required
+            class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 pr-10 outline-none focus:border-emerald-500">
+          <button type="button" onclick="togglePasswordVisibility('signupPass', this)"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 focus:outline-none text-base">👁️</button>
+        </div>
+
+        <button type="submit"
+          class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl px-4 py-3 transition">Register
+          Account</button>
+      </form>
+      <p class="text-center text-sm text-slate-600">Already a member? <button id="showLoginBtn" type="button"
+          class="text-emerald-600 font-bold hover:underline">Sign In here</button></p>
+    </div>
+  </div>
+
+  <!-- MAIN APPLICATION -->
+  <div id="mainApplication" class="hidden flex-col flex-1 w-full">
+
+    <!-- OFFLINE STATUS BANNER -->
+    <div id="offlineBanner"
+      class="hidden bg-rose-600 text-white text-center py-2 text-xs font-bold z-[200] sticky top-0 shadow-md">
+      ⚠️ No internet connection detected. You are currently offline.
+    </div>
+
+    <header class="bg-slate-900 text-white shadow-md border-b border-slate-800 sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-xl shadow-lg">
+            🧭</div>
+          <div>
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2"
+              data-i18n="app_title">Smart Driver Route Optimizer</h1>
+            <div class="flex items-center gap-2 text-xs text-slate-400">
+              <span id="userGreeting" class="font-semibold text-emerald-400"></span>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="settingsModalBtn"
+            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition">⚙️
+            <span data-i18n="settings_btn">Settings</span></button>
+          <button id="logoutBtn"
+            class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium transition"
+            data-i18n="logout_btn">🚪 Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="dynamicWarningBanner" class="hidden w-full transition-all duration-300 z-40 relative shadow-md"></div>
+
+    <main
+      class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+      <!-- LEFT COLUMN -->
+      <div class="lg:col-span-4 space-y-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-4 sm:p-5 space-y-4">
+          <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+            <h2 class="text-sm font-bold text-slate-900 tracking-tight" data-i18n="route_planner">Trip & Vehicle
+              Parameters</h2>
+            <span
+              class="text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full"
+              data-i18n="dijkstra_version">Dijkstra v2.4</span>
+          </div>
+
+          <div class="space-y-3">
+            <!-- Source City with Voice Control -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <span data-i18n="source_city">Source Town / Origin</span>
+                  <button type="button" onclick="startFieldVoice('sourceCitySelect')"
+                    class="text-xs hover:scale-110 transition p-1 rounded bg-slate-100 hover:bg-blue-100"
+                    title="Voice Input">🎤</button>
+                </span>
+                <span class="text-[10px] text-emerald-600 font-normal" data-i18n="start_pin">🟢 Start Pin</span>
+              </label>
+              <select id="sourceCitySelect"
+                class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-xs sm:text-sm rounded-xl px-3 py-2.5 font-medium"></select>
+            </div>
+
+            <div class="flex justify-center -my-1">
+              <button id="swapCitiesBtn"
+                class="w-7 h-7 rounded-full bg-slate-100 hover:bg-blue-100 border border-slate-200 text-slate-600 transition">⇅</button>
+            </div>
+
+            <!-- Destination City with Voice Control -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <span data-i18n="dest_city">Destination City / End</span>
+                  <button type="button" onclick="startFieldVoice('destCitySelect')"
+                    class="text-xs hover:scale-110 transition p-1 rounded bg-slate-100 hover:bg-blue-100"
+                    title="Voice Input">🎤</button>
+                </span>
+                <span class="text-[10px] text-rose-600 font-normal" data-i18n="finish_pin">🔴 Finish Pin</span>
+              </label>
+              <select id="destCitySelect"
+                class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-xs sm:text-sm rounded-xl px-3 py-2.5 font-medium"></select>
+            </div>
+          </div>
+
+          <!-- Vehicle Category with Voice Control -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <span data-i18n="vehicle_type">Vehicle Category</span>
+                <button type="button" onclick="startFieldVoice('vehicleSelect')"
+                  class="text-xs hover:scale-110 transition p-1 rounded bg-slate-100 hover:bg-blue-100"
+                  title="Voice Input">🎤</button>
+              </span>
+            </label>
+            <select id="vehicleSelect"
+              class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-xs sm:text-sm rounded-xl px-3 py-2.5 font-medium"></select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-1">
+            <!-- Mileage with Voice Control -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <span data-i18n="mileage_label">Mileage (km/L)</span>
+                  <button type="button" onclick="startFieldVoice('mileageInput')"
+                    class="text-xs hover:scale-110 transition p-1 rounded bg-slate-100 hover:bg-blue-100"
+                    title="Voice Input">🎤</button>
+                </span>
+              </label>
+              <input type="number" id="mileageInput" step="0.1" value="16.5"
+                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-mono font-semibold">
+            </div>
+
+            <!-- Current Fuel with Voice Control -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                  <span data-i18n="current_fuel_label">Current Fuel (L)</span>
+                  <button type="button" onclick="startFieldVoice('fuelInput')"
+                    class="text-xs hover:scale-110 transition p-1 rounded bg-slate-100 hover:bg-blue-100"
+                    title="Voice Input">🎤</button>
+                </label>
+                <span class="text-[10px] text-slate-400 font-mono">Max: 55 L</span>
+              </div>
+              <input type="number" id="fuelInput" step="1" value="30"
+                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-mono font-semibold">
+            </div>
+          </div>
+
+          <button id="runOptimizationBtn"
+            class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2">
+            <span>⚡</span><span data-i18n="optimize_btn">Calculate Optimal Route</span>
+          </button>
+        </div>
+
+        <!-- TRANSLATED SPEED LIMIT & SAFETY PROTOCOL BOX -->
+        <div
+          class="bg-gradient-to-br from-slate-900 to-slate-800 text-slate-200 rounded-2xl p-4 shadow-sm border border-slate-700 text-xs space-y-2">
+          <div class="flex items-center justify-between font-bold">
+            <div class="flex items-center gap-1.5"><span class="text-amber-400">🚦</span><span
+                data-i18n="speed_protocol_title">Speed Limit & Safety Protocol</span></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 pt-1 text-center font-mono text-[11px]">
+            <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700"><span
+                class="text-emerald-400 font-bold block">80-95</span><span class="text-slate-400 text-[10px]"
+                data-i18n="lbl_highway">Highway</span></div>
+            <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700"><span
+                class="text-amber-400 font-bold block">50-65</span><span class="text-slate-400 text-[10px]"
+                data-i18n="lbl_normal_sh">Normal SH</span></div>
+            <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700"><span
+                class="text-rose-400 font-bold block">20-35</span><span class="text-slate-400 text-[10px]"
+                data-i18n="lbl_ghat_road">Ghat Road</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="lg:col-span-8 space-y-4">
+
+        <!-- KPI Summary Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><span
+              class="text-[10px] font-semibold text-slate-500 block truncate" data-i18n="summary_distance">Total
+              Distance</span><span id="sumTotalDistance" class="text-base sm:text-lg font-bold font-mono">0 km</span>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><span
+              class="text-[10px] font-semibold text-slate-500 block truncate" data-i18n="summary_driving_time">Driving
+              Time</span><span id="sumDriveTime" class="text-base sm:text-lg font-bold text-blue-600 font-mono">0h
+              0m</span></div>
+          <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><span
+              class="text-[10px] font-semibold text-slate-500 block truncate" data-i18n="summary_rest_time">Scheduled
+              Rest</span><span id="sumRestTime" class="text-base sm:text-lg font-bold text-amber-600 font-mono">0 <span
+                data-i18n="unit_mins">mins</span></span></div>
+          <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><span
+              class="text-[10px] font-semibold text-slate-500 block truncate" data-i18n="summary_total_time">Total
+              Trip</span><span id="sumTotalDuration" class="text-base sm:text-lg font-bold text-indigo-700 font-mono">0h
+              0m</span></div>
+          <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><span
+              class="text-[10px] font-semibold text-slate-500 block truncate" data-i18n="summary_fuel_used">Fuel
+              Required</span><span id="sumFuelRequired"
+              class="text-base sm:text-lg font-bold text-emerald-600 font-mono">0 L</span></div>
+          <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><span
+              class="text-[10px] font-semibold text-slate-500 block truncate" data-i18n="summary_refuels">Refuel
+              Stops</span><span id="sumRefuelStops"
+              class="text-base sm:text-lg font-bold text-slate-900 font-mono">0</span></div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+          <div
+            class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-3 sm:px-4 overflow-x-auto custom-scrollbar">
+            <div class="flex items-center space-x-1 sm:space-x-3 text-xs sm:text-sm font-medium py-1">
+              <button data-tab-target="tabContentMap"
+                class="py-2.5 px-2 border-b-2 border-blue-600 text-blue-600 font-bold whitespace-nowrap transition"
+                data-i18n="tab_map">🗺️ Map</button>
+              <button data-tab-target="tabContentItinerary"
+                class="py-2.5 px-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap transition"
+                data-i18n="tab_itinerary">⏱️ Itinerary</button>
+              <button data-tab-target="tabContentDSA"
+                class="py-2.5 px-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap transition"
+                data-i18n="tab_dsa">🔬 DSA Inspector</button>
+              <button data-tab-target="tabContentAnalytics"
+                class="py-2.5 px-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap transition"
+                data-i18n="tab_analytics">📊 Fuel Analytics</button>
+              <button data-tab-target="tabContentAI"
+                class="py-2.5 px-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap transition"
+                data-i18n="tab_ai">🤖 AI Copilot</button>
+            </div>
+            <button id="resetMapViewBtn"
+              class="text-[11px] text-slate-600 hover:text-blue-600 px-2 py-1 bg-white border border-slate-200 rounded-lg shadow-sm hidden sm:block whitespace-nowrap"
+              data-i18n="reset_zoom">⟲ Reset Zoom</button>
+          </div>
+
+          <!-- TAB 1: MAP -->
+          <div id="tabContentMap" class="main-tab-content relative w-full h-[550px]">
+            <div id="mapContainer" class="w-full h-full rounded-xl z-10"></div>
+          </div>
+
+          <!-- TAB 2: ITINERARY -->
+          <div id="tabContentItinerary" class="main-tab-content hidden p-4 sm:p-6 overflow-y-auto max-h-[580px]">
+            <div class="flex items-center justify-between border-b pb-3 mb-4">
+              <h3 class="text-sm font-bold" data-i18n="schedule_title">Driving & Rest Schedule</h3>
+              <button id="downloadPdfBtn"
+                class="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition"
+                data-i18n="pdf_btn">📥 Download PDF</button>
+            </div>
+
+            <div id="pdfExportZone" class="bg-white px-4 py-2 w-full">
+              <div id="pdfHeader" class="mb-4 text-center border-b pb-4 hidden">
+                <h2 class="text-2xl font-bold text-slate-900">Smart Driver Itinerary</h2>
+                <p class="text-sm text-slate-600 mt-1" id="pdfRouteTitle"></p>
+              </div>
+              <div id="itineraryTimelineList" class="block space-y-4"></div>
+            </div>
+          </div>
+
+          <!-- TAB 3: DSA INSPECTOR -->
+          <div id="tabContentDSA" class="main-tab-content hidden p-4 sm:p-6 overflow-y-auto max-h-[580px] space-y-4">
+            <div class="bg-slate-900 text-white rounded-xl p-5 shadow-sm border border-slate-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-sm flex items-center gap-2"><span>🎓</span> Dijkstra's Algorithm Engine
+                  Inspection</h3>
+                <span class="text-xs bg-slate-800 px-3 py-1 rounded-full text-blue-300 border border-blue-900">Min-Heap
+                  Priority Queue</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-[11px]">
+                <div class="bg-slate-800/80 px-4 py-3 rounded-lg text-emerald-400 border border-slate-700">Time
+                  Complexity: O((V + E) log V) via Min-Priority Queue</div>
+                <div class="bg-slate-800/80 px-4 py-3 rounded-lg text-indigo-300 border border-slate-700">Space
+                  Complexity: O(V + E) for Adjacency List & State Tables</div>
+              </div>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <button id="dsaPrevStep"
+                  class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold shadow-sm hover:bg-slate-100 transition">⏮
+                  Previous Step</button>
+                <button id="dsaPlayStep"
+                  class="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition">▶
+                  Play Animation</button>
+                <button id="dsaNextStep"
+                  class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold shadow-sm hover:bg-slate-100 transition">Next
+                  Step ⏭</button>
+                <button id="dsaResetStep"
+                  class="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg text-xs hover:bg-slate-300 transition">Reset
+                  Execution</button>
+                <span id="dsaStepCounter"
+                  class="ml-auto text-xs font-mono font-bold bg-white px-3 py-1.5 rounded-lg border shadow-sm">Step 0 /
+                  0</span>
+              </div>
+              <input type="range" id="dsaStepSlider" min="0" max="0" value="0"
+                class="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer">
+              <div
+                class="p-3 bg-white rounded-lg border border-slate-200 text-xs font-mono text-slate-800 shadow-inner flex items-start gap-2">
+                <span class="text-blue-600 font-bold">Action:</span>
+                <span id="dsaStepDescription">Waiting for execution...</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <div class="flex justify-between items-center mb-3">
+                  <div class="font-bold text-xs">Min-Heap Priority Queue (Frontier)</div>
+                  <span class="text-[10px] text-slate-400 font-mono">key: time (mins)</span>
+                </div>
+                <div class="overflow-x-auto max-h-48 border rounded-lg">
+                  <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 border-b text-slate-500 font-medium">
+                      <tr>
+                        <th class="px-3 py-2">Heap Pos</th>
+                        <th class="px-3 py-2">City Node</th>
+                        <th class="px-3 py-2 text-right">Time Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dsaPQTableBody" class="font-mono divide-y"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <div class="flex justify-between items-center mb-3">
+                  <div class="font-bold text-xs">Settled Nodes Set S</div>
+                  <span class="text-[10px] text-emerald-600 font-bold">Optimal Distance Locked</span>
+                </div>
+                <div id="dsaSettledNodes"
+                  class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto bg-slate-50 p-3 rounded-lg border shadow-inner">
+                  <span class="text-xs text-slate-400 italic">No nodes settled yet</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: ANALYTICS CHART -->
+          <div id="tabContentAnalytics" class="main-tab-content hidden p-4 sm:p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+              <div>
+                <h3 class="text-sm font-bold" data-i18n="analytics_title">Fuel & Speed Analytics</h3>
+                <p class="text-xs text-slate-500" data-i18n="analytics_desc">Real-time simulation of vehicle fuel tank
+                  level and route speed profiles.</p>
+              </div>
+              <span
+                class="px-3 py-1 border border-emerald-300 text-emerald-700 bg-emerald-50 rounded-full text-[10px] font-bold"
+                data-i18n="telemetry_model">Telemetry Model</span>
+            </div>
+
+            <div class="relative w-full h-72 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+              <canvas id="analyticsChartCanvas"></canvas>
+            </div>
+          </div>
+
+          <!-- TAB 5: AI COPILOT -->
+          <div id="tabContentAI" class="main-tab-content hidden p-4 sm:p-5 flex flex-col h-[540px]">
+            <div id="aiSafetyBriefingContainer"></div>
+            <div id="aiChatMessagesContainer"
+              class="flex-1 overflow-y-auto bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3 font-sans mt-3">
+            </div>
+            <div class="flex items-center gap-2 pt-3">
+              <button onclick="startVoiceRecognition()" id="micBtn"
+                class="p-3 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-xl transition border border-blue-300 shadow-sm flex items-center justify-center">🎤</button>
+              <input type="text" id="aiChatInput" data-i18n-placeholder="ai_placeholder"
+                placeholder="Type or tap mic..."
+                class="flex-1 bg-slate-50 border border-slate-300 text-sm rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 transition">
+              <button id="aiSendBtn"
+                class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-sm transition"
+                data-i18n="ai_send">Send</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-base font-bold text-slate-900">⚙️ Settings</h3>
+        <button onclick="document.getElementById('settingsModal').classList.add('hidden')"
+          class="text-slate-400 hover:text-slate-700 font-bold text-lg">&times;</button>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1.5" data-i18n="language_select">Select Language</label>
+        <select id="modalLanguageSelect" onchange="setLanguage(this.value)"
+          class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-medium">
+          <option value="en">English</option>
+          <option value="ta">தமிழ் (Tamil)</option>
+          <option value="hi">हिन्दी (Hindi)</option>
+          <option value="te">తెలుగు (Telugu)</option>
+          <option value="kn">கன்னட (Kannada)</option>
+          <option value="ml">മലയാളം (Malayalam)</option>
+          <option value="bn">বাংলা (Bengali)</option>
+          <option value="mr">मराठी (Marathi)</option>
+          <option value="gu">ગુજરાતી (Gujarati)</option>
+        </select>
+      </div>
+      <button onclick="document.getElementById('settingsModal').classList.add('hidden')"
+        class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl mt-2">Save & Close</button>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/tamilnadu_data.js"></script>
+  <script src="js/tamilnadu_boundary.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/dijkstra.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/ai_assistant.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>

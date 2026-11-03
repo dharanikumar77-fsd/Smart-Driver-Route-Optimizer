@@ -1,0 +1,143 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #f1f5f9;
+  color: #1e293b;
+  overflow-x: hidden;
+}
+
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+/* Map Custom Legend & Emojis */
+.map-legend {
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  line-height: 1.6;
+  color: #334155;
+  font-size: 11px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  max-width: 200px;
+}
+
+.map-legend h4 {
+  margin: 0 0 8px 0;
+  font-size: 10px;
+  font-weight: 800;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.map-legend i {
+  width: 14px;
+  height: 3px;
+  float: left;
+  margin-right: 8px;
+  margin-top: 6px;
+  border-radius: 2px;
+}
+
+.map-legend-row {
+  clear: both;
+  overflow: hidden;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.emoji-marker {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+  filter: drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.4));
+  background: white;
+  border-radius: 50%;
+  border: 2px solid #3b82f6;
+  width: 30px !important;
+  height: 30px !important;
+  margin-left: -15px;
+  margin-top: -15px;
+  z-index: 1000 !important;
+}
+
+/* Scrollbars */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 4px;
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* Utilities */
+.mic-active {
+  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(225, 29, 72, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
+  }
+}
+
+/* Print / PDF overrides to prevent blank pages */
+#pdfExportZone {
+  background: white !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 10px !important;
+  width: 100% !important;
+}
+
+.pdf-timeline-item {
+  page-break-inside: avoid;
+  display: block;
+  margin-bottom: 12px;
+}
+
+/* High-Clarity PDF Export Overrides */
+.pdf-print-mode {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  padding: 20px !important;
+  font-family: system-ui, -apple-system, sans-serif !important;
+}
+
+.pdf-print-mode * {
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+  text-shadow: none !important;
+}
+
+.pdf-print-mode .pdf-timeline-item {
+  border-left-color: #2563eb !important;
+  padding-bottom: 1.25rem !important;
+}
+
+.pdf-print-mode .pdf-timeline-item div {
+  background-color: #f8fafc !important;
+}
