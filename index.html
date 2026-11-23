@@ -24,6 +24,7 @@
     window.fbSignIn = signInWithEmailAndPassword;
     window.fbSignOut = signOut;
     window.fbAuthState = onAuthStateChanged;
+    window.dispatchEvent(new Event("firebase-auth-ready"));
   </script>
 </head>
 
