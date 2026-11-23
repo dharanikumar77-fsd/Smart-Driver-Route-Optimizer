@@ -1,0 +1,36 @@
+# Environment variables & local secrets
+.env
+.env.*
+*.env
+
+# Local config files with API keys or credentials
+config.js
+firebase-config.js
+*.secret.js
+*secrets*.json
+
+# Firebase local cache & debug logs
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Node / Build tools (if added later)
+node_modules/
+dist/
+build/
+
+# IDE & Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & temporary files
+*.log
+*.tmp
